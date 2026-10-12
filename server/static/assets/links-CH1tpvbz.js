@@ -1,1 +1,0 @@
-var e=`Dhrusheek`,t={source:`https://github.com/dhrusheek/aquasense`,x:``,contact:``};export{t as n,e as t};

@@ -13,23 +13,16 @@ import { defineConfig } from 'vite'
 const RELEASE = process.env.AQ_RELEASE === '1'
 const SIM = process.env.AQ_SIM === '1'
 
-// The evaluator build never loads the release skin; give its (dead) import an empty module so no skin CSS or font is emitted.
-const skipSkin = {
-  name: 'aq-skip-skin',
-  enforce: 'pre' as const,
-  load(id: string) { return !RELEASE && id.split('?')[0].endsWith('/release/cyber.css') ? '' : null },
-}
-
 export default defineConfig({
   base: SIM ? '/' : '/static/',
   define: {
     ...(SIM ? { 'import.meta.env.VITE_AQ_SIM': JSON.stringify('1') } : {}),
-    // Always defined, so `RELEASE` is a build-time constant: the evaluator build drops the cyber shell and skin.
+    // Always defined, so `RELEASE` is a build-time constant: the evaluator build drops the release pages.
     'import.meta.env.VITE_AQ_RELEASE': JSON.stringify(RELEASE ? '1' : ''),
     // Short time-based id shown in the release footer's construction strip.
     ...(RELEASE ? { 'import.meta.env.VITE_BUILD_ID': JSON.stringify(Date.now().toString(36).slice(-6)) } : {}),
   },
-  plugins: [skipSkin, react(), tailwindcss()],
+  plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(__dirname, './src') } },
   build: { outDir: SIM ? (RELEASE ? './dist-release' : './dist-sim') : '../server/static', emptyOutDir: SIM, assetsDir: 'assets', chunkSizeWarningLimit: 900 },
   server: { port: 5173, proxy: { '/api': 'http://127.0.0.1:5050', '/static/mock_state.json': 'http://127.0.0.1:5050' } },

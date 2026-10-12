@@ -1,0 +1,1 @@
+@layer components{.art{background:var(--card-fill);width:100%;display:block;position:relative;overflow:hidden}.art--night{background:var(--deep)}.art>canvas{width:100%;height:100%;display:block;position:absolute;inset:0}}

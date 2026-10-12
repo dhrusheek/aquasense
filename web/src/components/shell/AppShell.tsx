@@ -4,8 +4,6 @@ import { AppSidebar } from '@/components/shell/AppSidebar';
 import { TopBar } from '@/components/shell/TopBar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { RELEASE } from '@/lib/constants';
-import { CyberShell } from '@/release/CyberShell';
 
 /** localStorage key of the desktop sidebar state: 'expanded' (default) or 'collapsed'. */
 const SIDEBAR_KEY = 'aq-sidebar';
@@ -32,12 +30,6 @@ const SIDEBAR_SIZE = { '--sidebar-width': '17rem', '--sidebar-width-icon': '3rem
  * and remembers it; under 900 px it is a drawer (see hooks/use-mobile.ts).
  */
 export function AppShell({ children }: { children: ReactNode }) {
-  // Public release build: the cyber shell replaces the sidebar frame (the dashboard path below is unchanged).
-  if (RELEASE) return <CyberShell>{children}</CyberShell>;
-  return <DashboardShell>{children}</DashboardShell>;
-}
-
-function DashboardShell({ children }: { children: ReactNode }) {
   const view = useHashRoute();
   const [open, setOpen] = useState(readSidebarOpen);
   const onOpenChange = useCallback((next: boolean) => {
