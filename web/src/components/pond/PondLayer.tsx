@@ -6,6 +6,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useHashRoute } from '@/app/useHashRoute';
 import { pondEnabledNow, usePondEnabled } from '@/components/pond/prefs';
 import { useReducedMotion } from '@/components/viz/hooks';
+import { RELEASE } from '@/lib/constants';
 import { useSnapshot } from '@/data/hooks';
 import { isOnline, lightOf } from '@/data/selectors';
 import { Fish, type Attention, type Stimulus } from './fish';
@@ -62,6 +63,8 @@ function Pond({ route }: { route: string }) {
     let W = 0, H = 0, dpr = 1, cellW = 8.4;
     let tokens = { n2: '', n3: '', n4: '' };
     let obs: Obstacles = { pads: [], text: [] };
+    let fobs: Obstacles = obs; // what the fish sees: under the cyber skin the content column counts as a pad, so it keeps to the gutters
+    const cyber = document.documentElement.dataset.skin === 'cyber';
     let att: Attention | null = null, attEl: Element | null = null;
     let hoverEl: Element | null = null, hoverSince = 0, hoverDone: Element | null = null;
     let ptr: { x: number; y: number } | null = null;
@@ -69,6 +72,10 @@ function Pond({ route }: { route: string }) {
     let raf = 0, timer = 0, last = 0, lastWater = 0, lastSpawn = 0, drawn = false, warned = false;
     let ewma = 0, shown: Map<number, Cell> = new Map();
     const stamps: number[] = [];
+    /* Release skin: cursor wake, a trail of ~ . , that fades in 400 ms (fine pointers only, at most 12 live). */
+    const WAKE_MAX = 12, WAKE_MS = 400, WAKE_CH = ['~', '.', ','];
+    const wake: Array<{ x: number; y: number; ch: string; t: number }> = [];
+    let wakeLast: { x: number; y: number } | null = null, wakeN = 0;
     let lastText = '', lastOp = -1, lastTone = '';
     const ids = new WeakMap<Element, number>();
     let nextId = 1;
@@ -102,9 +109,12 @@ function Pond({ route }: { route: string }) {
     };
     const sample = () => {
       obs = sampleObstacles();
+      fobs = obs;
+      const col = cyber ? document.querySelector('.cy-main')?.getBoundingClientRect() : null;
+      if (col && col.width > 0) fobs = { pads: [...obs.pads, { x: col.left + 16, y: -1000, w: Math.max(0, col.width - 32), h: H + 2000 }], text: obs.text };
       lastSample = performance.now(); dirty = false;
       if (attEl && att) { const r = attEl.getBoundingClientRect(); att.rect = { x: r.left, y: r.top, w: r.width, h: r.height }; }
-      if (!placed && fish && W) { placed = true; if (reduced) fish.park(cells(), obs); else fish.place(cells(), obs); }
+      if (!placed && fish && W) { placed = true; if (reduced) fish.park(cells(), fobs); else fish.place(cells(), fobs); }
     };
     const probe = (x: number, y: number) => {
       lastProbe = performance.now();
@@ -121,15 +131,22 @@ function Pond({ route }: { route: string }) {
 
     const paint = (m: Map<number, Cell>) => {
       shown = m;
-      if (!m.size && !drawn) return;
+      const tNow = performance.now();
+      while (wake.length && tNow - wake[0].t >= WAKE_MS) wake.shift();
+      if (!m.size && !drawn && !wake.length) return;
       g.clearRect(0, 0, W, H);
       for (const [k, c] of m) {
         g.globalAlpha = c.a;
         g.fillStyle = c.tone === 3 ? tokens.n3 : tokens.n4;
         g.fillText(c.ch, (k % KEY) * cellW, Math.floor(k / KEY) * CELL_H);
       }
+      for (const w of wake) {
+        g.globalAlpha = 1 - (tNow - w.t) / WAKE_MS;
+        g.fillStyle = tokens.n2;
+        g.fillText(w.ch, w.x - cellW / 2, w.y - CELL_H / 2);
+      }
       g.globalAlpha = 1;
-      drawn = m.size > 0;
+      drawn = m.size > 0 || wake.length > 0;
     };
 
     /** One frame. Returns when the next one is wanted: 0 = next animation frame, >0 = ms asleep, <0 = not at all. */
@@ -144,20 +161,20 @@ function Pond({ route }: { route: string }) {
         // Attention holds while the pointer stays on the element and ends 10 s after it leaves.
         if (att && attEl && hoverEl === attEl && ptr) att.until = c.now + 10;
         if (!reduced) {
-          const v = fish.update(dt, c, obs, att);
+          const v = fish.update(dt, c, fobs, att);
           fishEl.style.transform = `translate3d(${v.x.toFixed(2)}px,${v.y.toFixed(2)}px,0)`;
           if (v.text !== lastText) { fishEl.textContent = v.text; lastText = v.text; }
           if (v.opacity !== lastOp) { fishEl.style.opacity = String(v.opacity); lastOp = v.opacity; }
           if (v.tone !== lastTone) { fishEl.style.color = `var(--${v.tone})`; lastTone = v.tone; }
         } else if (!lastText) {
-          const v = fish.update(0, c, obs, null);
+          const v = fish.update(0, c, fobs, null);
           fishEl.style.transform = `translate3d(${v.x}px,${v.y}px,0)`;
           fishEl.textContent = v.text; lastText = v.text; fishEl.style.opacity = '0.75';
         }
       }
       const awake = !!fish && !reduced && !fish.idle();
       const busy = water.busy();
-      if (nowMs - lastWater >= (busy ? 50 : 160) && (busy || awake || drawn || water.glintCount())) {
+      if (nowMs - lastWater >= (busy ? 50 : 160) && (busy || awake || drawn || wake.length || water.glintCount())) {
         lastWater = nowMs;
         const spawn = nowMs - lastSpawn >= 160;
         if (spawn) lastSpawn = nowMs;
@@ -166,6 +183,7 @@ function Pond({ route }: { route: string }) {
       const cost = performance.now() - a;
       ewma = ewma ? ewma * 0.9 + cost * 0.1 : cost;
       // Next frame: every frame while anything moves, 2 Hz while the fish sleeps, nothing when idle.
+      if (wake.length) return 0;
       if (fish && !reduced && fish.slow()) return 125; // asleep (or long in bed): 8 fps at most, bubbles included
       if (water.busy() || awake) return 0;
       return fish && !reduced ? 500 : -1;
@@ -230,6 +248,14 @@ function Pond({ route }: { route: string }) {
       probeSoon();
       kick();
     };
+    const onWake = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+      if (wakeLast && Math.hypot(e.clientX - wakeLast.x, e.clientY - wakeLast.y) < 22) return;
+      wakeLast = { x: e.clientX, y: e.clientY };
+      wake.push({ x: e.clientX, y: e.clientY, ch: WAKE_CH[wakeN++ % WAKE_CH.length], t: performance.now() });
+      if (wake.length > WAKE_MAX) wake.shift();
+      kick();
+    };
     const onInput = () => { fish?.input(nowS()); kick(); };
     const onFocus = (e: FocusEvent) => {
       const el = e.target instanceof Element ? e.target.closest(ATTN_SEL) : null;
@@ -245,6 +271,7 @@ function Pond({ route }: { route: string }) {
     document.addEventListener('visibilitychange', onVis, P);
     window.addEventListener('resize', onResize, P);
     window.addEventListener('scroll', onLayout, P);
+    if (RELEASE && !reduced && window.matchMedia('(pointer: fine)').matches) document.addEventListener('pointermove', onWake, P);
     if (fish) {
       document.addEventListener('pointermove', onMove, P);
       document.addEventListener('keydown', onInput, P);
@@ -268,7 +295,7 @@ function Pond({ route }: { route: string }) {
       },
     };
 
-    if (fishEl) { fishEl.style.transition = 'opacity 200ms linear, color 600ms linear'; }
+    if (fishEl && !cyber) { fishEl.style.transition = 'opacity 200ms linear, color 600ms linear'; }
     readTokens(); size();
     document.fonts?.load('14px "Geist Mono Variable"').then(() => { if (alive) { size(); dirty = true; kick(); } }, () => {});
     kick();
@@ -293,6 +320,7 @@ function Pond({ route }: { route: string }) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onLayout);
       document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointermove', onWake);
       document.removeEventListener('keydown', onInput);
       document.removeEventListener('focusin', onFocus);
       document.documentElement.removeEventListener('mouseleave', onLeave);

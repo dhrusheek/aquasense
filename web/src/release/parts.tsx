@@ -16,21 +16,6 @@ export function PageTitle({ title, note }: { title: string; note?: ReactNode }) 
   );
 }
 
-/** One idea per card: an optional icon, a heading and a short paragraph. */
-export function IdeaCard({ icon, title, children }: { icon?: ReactNode; title: string; children: ReactNode }) {
-  return (
-    <article className="surface-card flex min-w-0 flex-col gap-3 p-4 text-card-foreground sm:p-6">
-      {icon && <span aria-hidden="true" className="flex size-9 items-center justify-center rounded-full border border-ink-3 text-foreground [&_svg]:size-4">{icon}</span>}
-      <h3 className="text-[15px] leading-6 font-semibold text-foreground">{title}</h3>
-      <p className="max-w-[60ch] text-sm leading-6 text-muted-foreground">{children}</p>
-    </article>
-  );
-}
-
-export function SectionTitle({ id, children }: { id: string; children: ReactNode }) {
-  return <h2 id={id} className="text-xl leading-7 font-semibold tracking-[-0.01em] text-foreground">{children}</h2>;
-}
-
 /** "Get the source" and "Follow on X": each renders only when its link is set. */
 export function LinkButtons({ contact = false }: { contact?: boolean }) {
   const items: { href: string; label: string }[] = [

@@ -3,13 +3,14 @@
 // index.html applies the stored class before first paint (no flash).
 import type { ReactNode } from 'react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import { RELEASE } from '@/lib/constants';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="light"
-      enableSystem={false}
+      defaultTheme={RELEASE ? 'system' : 'light'}
+      enableSystem={RELEASE}
       storageKey="aq-theme"
       disableTransitionOnChange
       // next-themes renders its own no-flash <script>. In a client-only app React never runs it

@@ -5,6 +5,7 @@
 import { toast } from 'sonner';
 import { mockUrl } from '@/data/api';
 import type { State } from '@/data/types';
+import { RELEASE } from '@/lib/constants';
 import { num } from '@/lib/safe';
 
 export interface ReplaySource {
@@ -39,7 +40,7 @@ export function createReplaySource(file = 'sim_frames.json'): ReplaySource {
       }
       const sc = base.scenario || '';
       if (sc && sc !== lastScenario) {
-        if (lastScenario) toast.message('Simulation scenario', { id: 'sim-scenario', description: sc, duration: 6000 });
+        if (lastScenario && (!RELEASE || location.hash.replace(/^#\/?/, '').split(/[?/]/)[0] === 'live')) toast.message('Simulation scenario', { id: 'sim-scenario', description: sc, duration: 6000 });
         lastScenario = sc;
       }
       return base;

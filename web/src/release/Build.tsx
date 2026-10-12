@@ -1,39 +1,29 @@
-// #build — parts, wiring per node, flashing and placing the floats.
+// #build — parts, wiring per node, an interactive flash checklist and placing the floats.
+import { useEffect, useState } from 'react';
 import { BASE } from '@/data/api';
-import { KeyValue } from '@/components/aq/KeyValue';
-import { Tray } from '@/components/aq/Tray';
-import { PageTitle } from './parts';
+import { Box, Decode, Dim, Grid, Progress, Table } from '@/release/ui';
 
-const PARTS = [
-  '4 × ESP32 DevKit V1 (30 pin)',
-  '1 × turbidity probe with LM393 board',
-  '2 × LEDs (red, green) and 2 resistors',
-  '1 × breadboard and jumper wires',
-  'USB cables that carry data',
-  'Optional: a small USB solar power bank',
+const PARTS: string[][] = [
+  ['ESP32 DevKit V1 (30 pin)', '4'],
+  ['Turbidity probe with LM393 board', '1'],
+  ['LEDs (red, green) and resistors', '2 + 2'],
+  ['Breadboard and jumper wires', '1 set'],
+  ['USB cables that carry data', 'one per node'],
+  ['Small USB solar power bank (optional)', 'as needed'],
 ];
 
-interface Wire { id: string; name: string; img: string; alt: string; pins: { k: string; v: string }[]; note?: string }
+interface Wire { id: string; name: string; img: string; alt: string; pins: string[][]; note?: string }
 
 const WIRES: Wire[] = [
   { id: 'N1', name: 'Float 1', img: 'wiring_N1.png', alt: 'Wiring diagram for Float 1: a bare ESP32 on a USB cable', pins: [], note: 'No wiring. It reads the board temperature from inside the ESP32 chip and needs only USB power.' },
   {
     id: 'N2', name: 'Float 2', img: 'wiring_N2.png', alt: 'Wiring diagram for Float 2: turbidity module wired to the ESP32',
-    pins: [
-      { k: 'V', v: '3V3 (never 5 V)' },
-      { k: 'G', v: 'GND' },
-      { k: 'A', v: 'GPIO34' },
-      { k: 'D', v: 'GPIO27' },
-    ],
+    pins: [['V', '3V3 (never 5 V)'], ['G', 'GND'], ['A', 'GPIO34'], ['D', 'GPIO27']],
   },
   { id: 'N3', name: 'Bank node', img: 'wiring_N3.png', alt: 'Wiring diagram for the bank node: a bare ESP32 on a USB cable', pins: [], note: 'No wiring. Board temperature comes from the ESP32 chip.' },
   {
     id: 'N4', name: 'Dock node', img: 'wiring_N4.png', alt: 'Wiring diagram for the dock node: green and red LEDs with resistors on a breadboard',
-    pins: [
-      { k: 'Green LED', v: 'GPIO25, via a resistor' },
-      { k: 'Red LED', v: 'GPIO27, via a resistor' },
-      { k: 'Both cathodes', v: 'GND' },
-    ],
+    pins: [['Green LED', 'GPIO25, via a resistor'], ['Red LED', 'GPIO27, via a resistor'], ['Both cathodes', 'GND']],
   },
 ];
 
@@ -43,55 +33,77 @@ const FLASH = [
   'In config.h set NODE_ID to 1, 2, 3 or 4 for each board.',
   'Choose the Huge APP partition scheme.',
   'Flash each board in turn.',
+  'Create the Python venv once: python3 -m venv .venv && .venv/bin/pip install -r server/requirements.txt',
 ];
 
+const KEY = 'aq-build-steps';
+
+function load(): boolean[] {
+  try {
+    const v: unknown = JSON.parse(localStorage.getItem(KEY) || '[]');
+    if (Array.isArray(v)) return FLASH.map((_, i) => v[i] === true);
+  } catch { /* storage blocked or corrupt */ }
+  return FLASH.map(() => false);
+}
+
 export default function Build() {
+  const [done, setDone] = useState<boolean[]>(load);
+  useEffect(() => {
+    try { localStorage.setItem(KEY, JSON.stringify(done)); } catch { /* ignore */ }
+  }, [done]);
+  const count = done.filter(Boolean).length;
+
   return (
     <>
-      <PageTitle title="Build the floats yourself" />
-      <div className="flex max-w-[1100px] flex-col gap-6">
-        <Tray title="Parts">
-          <ul className="grid grid-cols-1 gap-x-8 gap-y-2 text-sm leading-6 text-foreground sm:grid-cols-2">
-            {PARTS.map((p) => <li key={p} className="border-b border-ink-3 py-1.5">{p}</li>)}
-          </ul>
-          <p className="text-sm text-muted-foreground">
-            About <span className="tabular font-mono text-foreground">₹3,000</span> (≈ <span className="tabular font-mono text-foreground">$35</span>) in parts for all four nodes, approximate.
-          </p>
-        </Tray>
+      <div className="cy-plate" aria-hidden="true">
+        <span className="cy-plate-tab" />
+        <p className="cy-plate-title">AquaSense</p>
+        <p className="cy-plate-sub">build guide, four nodes, one pond</p>
+      </div>
+      <Decode as="h1">Build the floats yourself</Decode>
+      <Grid>
+        <Box title="Parts" span={12}>
+          <Table cols={['Part', 'Quantity']} rows={PARTS.map(([p, q]) => [p, <span key={p} className="font-mono">{q}</span>])} />
+          <p><Dim>About ₹3,000 (≈ $35) in parts for all four nodes, approximate.</Dim></p>
+        </Box>
 
-        <section aria-labelledby="bd-wiring" className="flex flex-col gap-4">
-          <h2 id="bd-wiring" className="text-xl leading-7 font-semibold tracking-[-0.01em] text-foreground">Wiring</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {WIRES.map((w) => (
-              <article key={w.id} aria-label={w.name} className="surface-card flex min-w-0 flex-col gap-4 p-4 sm:p-6">
-                <h3 className="text-[15px] leading-6 font-semibold text-foreground">{w.name} · <span className="tabular font-mono">{w.id}</span></h3>
-                <img src={`${BASE}guide/${w.img}`} alt={w.alt} loading="lazy" className="h-auto w-full rounded-xl bg-white object-contain" />
-                {w.pins.length ? (
-                  <KeyValue items={w.pins.map((p) => ({ ...p, mono: true }))} align="left" />
-                ) : (
-                  <p className="text-sm leading-6 text-muted-foreground">{w.note}</p>
-                )}
-              </article>
+        <Box title="Wiring" span={12}>
+          <Grid>
+            {WIRES.map((w, i) => (
+              <Box key={w.id} as="article" titleAs="h3" title={`${w.name} · ${w.id}`} span={6} className="cy-span-phone-12">
+                <a href={`${BASE}guide/${w.img}`} target="_blank" rel="noreferrer"><img src={`${BASE}guide/${w.img}`} alt={w.alt} loading="lazy" className="cy-fig h-auto w-full object-contain" /></a>
+                <p><Dim>fig. {i + 2} · </Dim><a href={`${BASE}guide/${w.img}`} target="_blank" rel="noreferrer"><Dim>open full size</Dim></a></p>
+                {w.pins.length ? <Table cols={['Pin', 'Connects to']} rows={w.pins.map(([k, v]) => [k, <span key={k} className="font-mono">{v}</span>])} /> : <p>{w.note}</p>}
+              </Box>
             ))}
-          </div>
-        </section>
+          </Grid>
+        </Box>
 
-        <Tray title="Flash the firmware">
-          <ol className="flex list-none flex-col gap-3">
+        <Box title="Flash the firmware" span={12}>
+          <Progress value={count} max={FLASH.length} label="steps done" />
+          <ul className="flex list-none flex-col gap-2 p-0">
             {FLASH.map((t, i) => (
-              <li key={t} className="flex items-start gap-3 text-sm leading-6 text-foreground">
-                <span aria-hidden="true" className="tabular flex size-6 shrink-0 items-center justify-center rounded-full border border-ink-3 font-mono text-xs">{i + 1}</span>
-                {t}
+              <li key={t}>
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={done[i]}
+                    onChange={() => setDone((d) => d.map((v, j) => (j === i ? !v : v)))}
+                    className="mt-1 size-5 shrink-0"
+                  />
+                  <span className="font-mono">{t}</span>
+                </label>
               </li>
             ))}
-          </ol>
-        </Tray>
+          </ul>
+        </Box>
 
-        <Tray title="Place them">
-          <img src={`${BASE}guide/network_topology.png`} alt="Layout of the four nodes: two floats in the water, the bank node and the dock node on the shore" loading="lazy" className="mx-auto h-auto max-h-[480px] w-full max-w-[720px] rounded-xl bg-white object-contain" />
-          <p className="max-w-[60ch] text-sm leading-6 text-muted-foreground">The bank node and the dock node go on the shore; the two floats go in the water, all within radio range of each other.</p>
-        </Tray>
-      </div>
+        <Box title="Place them" span={12}>
+          <img src={`${BASE}guide/network_topology.png`} alt="Layout of the four nodes: two floats in the water, the bank node and the dock node on the shore" loading="lazy" className="cy-fig h-auto max-h-[480px] w-full max-w-[720px] object-contain" />
+          <p><Dim>fig. 6 · the four nodes in range of each other</Dim></p>
+          <p>The bank node and the dock node go on the shore; the two floats go in the water, all within radio range of each other.</p>
+        </Box>
+      </Grid>
     </>
   );
 }
