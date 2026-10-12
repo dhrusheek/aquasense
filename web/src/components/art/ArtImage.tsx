@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useDpr, useElementSize, useReducedMotion, useThemeTokens } from '@/components/viz/hooks';
 import { cn } from '@/lib/utils';
 import { addJob, wake } from './loop';
+import { jumpBoost } from './scenes/fish';
 import { ART_TOKENS, clamp01, createArt, resolveColours, type ArtCell, type ArtMode, type ArtTint } from './raster';
 import type { SceneFn } from './scenes/common';
 import './art.css';
@@ -62,6 +63,8 @@ export function ArtCanvas({ source, mode, tint, cell, aspect, animate, alt, clas
   const [boxRef, { width, height }] = useElementSize<HTMLDivElement>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const live = useRef(colours);
+  const seedRef = useRef(Math.floor(Math.random() * 1e6) + 1);
+  const seed = seedRef.current;
   const repaint = useRef<(() => void) | null>(null);
   const isScene = source.kind === 'scene';
   const srcKey = source.kind === 'image' ? source.src : `${source.key}:${source.state}`;
@@ -88,7 +91,7 @@ export function ArtCanvas({ source, mode, tint, cell, aspect, animate, alt, clas
       const src = sourceRef.current;
       const c = live.current;
       if (src.kind === 'scene') {
-        engine.sample((ctx, PW, PH) => src.draw(ctx, PW, PH, t, c, { state: src.state }), false);
+        engine.sample((ctx, PW, PH) => src.draw(ctx, PW, PH, t, c, { state: src.state, seed, jumps: shimmer }), false);
       } else {
         if (!img) return;
         if (!sampled) {
@@ -124,6 +127,7 @@ export function ArtCanvas({ source, mode, tint, cell, aspect, animate, alt, clas
       remove = addJob({
         el: canvas,
         fps: animate === 'scan' ? 30 : isScene ? 8 : 6,
+        boostFps: (now) => (isScene && shimmer && jumpBoost((now - t0) / 1000 + STILL, seed) ? 24 : undefined),
         animated: () => (animate === 'shimmer' ? isScene || !!img : scanning()),
         visible: (v, now) => {
           if (v && animate === 'scan' && scanFrom < 0 && !scanDone) { scanFrom = now; reveal = 0; if (sampled || isScene) still(); }

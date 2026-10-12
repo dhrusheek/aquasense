@@ -5,6 +5,8 @@ export interface ArtJob {
   el: Element;
   /** Target frame rate while animating. */
   fps: number;
+  /** Optional: a temporary higher frame rate (e.g. during a jump). */
+  boostFps?(now: number): number | undefined;
   /** True while the job has frames to draw (a scan in progress, a live scene). */
   animated(): boolean;
   /** Draw one frame; `now` is the rAF timestamp in ms. */
@@ -22,6 +24,8 @@ let io: IntersectionObserver | null = null;
 let raf = 0;
 let seq = 0;
 let lastTickMs = 0;
+let paused = false;
+let boosted = 0;
 
 function ensureIo(): IntersectionObserver {
   return (io ??= new IntersectionObserver((entries) => {
@@ -41,7 +45,8 @@ function ensureIo(): IntersectionObserver {
 
 function tick(now: number) {
   raf = 0;
-  if (document.hidden) return;
+  if (document.hidden || paused) return;
+  boosted = 0;
   let animating = 0;
   const live: Slot[] = [];
   for (const s of slots.values()) if (s.vis && s.job.animated()) live.push(s);
@@ -49,7 +54,9 @@ function tick(now: number) {
   for (const s of live) {
     if (animating >= MAX_ANIMATING) break;
     animating++;
-    if (now - s.last < 1000 / s.fps - 2) continue;
+    const fps = s.job.boostFps?.(now) ?? s.fps;
+    if (fps > s.fps) boosted++;
+    if (now - s.last < 1000 / fps - 2) continue;
     s.last = now;
     const a = performance.now();
     s.job.frame(now);
@@ -81,12 +88,13 @@ export function addJob(job: ArtJob): () => void {
   };
 }
 
-export interface ArtStats { jobs: number; visible: number; animating: number; avgMs: number; maxMs: number; perJob: { ms: number; frames: number; fps: number }[] }
+export interface ArtStats { boosted: number; jobs: number; visible: number; animating: number; avgMs: number; maxMs: number; perJob: { ms: number; frames: number; fps: number }[] }
 
 export function artStats(): ArtStats {
   const all = [...slots.values()];
   const timed = all.filter((s) => s.frames > 0);
   return {
+    boosted,
     jobs: all.length,
     visible: all.filter((s) => s.vis).length,
     animating: lastTickMs,
@@ -97,5 +105,5 @@ export function artStats(): ArtStats {
 }
 
 if (typeof window !== 'undefined' && (import.meta.env.DEV || window.location.search.includes('artpreview'))) {
-  (window as unknown as { __art: { stats: () => ArtStats } }).__art = { stats: artStats };
+  (window as unknown as { __art: unknown }).__art = { stats: artStats, pause: () => { paused = true; }, resume: () => { paused = false; wake(); } };
 }

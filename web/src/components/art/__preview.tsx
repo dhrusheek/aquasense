@@ -9,6 +9,15 @@ export function ArtPreview() {
   const tints: ArtTint[] = ['night', 'ink'];
   return (
     <div className="fixed inset-0 z-[9999] overflow-auto bg-[var(--background)] p-4" style={{ color: 'var(--ink)' }}>
+      <section className="mb-6">
+        <h2 className="mb-2 font-semibold">jump</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <ArtScene scene="waves" mode="ascii" aspect="16/9" />
+          <ArtScene scene="waves" mode="dots" aspect="16/9" />
+          <ArtScene scene="waves" mode="dots" cell="xs" aspect="3/1" />
+          <ArtScene scene="waves" mode="ascii" cell="xs" aspect="3/1" />
+        </div>
+      </section>
       {tints.map((tint) => MODES.map((mode) => (
         <section key={tint + mode} className="mb-6">
           <h2 className="mb-2 font-semibold">{tint} / {mode}</h2>

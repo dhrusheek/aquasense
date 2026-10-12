@@ -3,7 +3,7 @@
 import { css, mixRgb, type ArtColours, type Rgb } from '../raster';
 
 export type SceneName = 'waves' | 'float' | 'lamp' | 'mesh' | 'turbid' | 'bank';
-export interface SceneOpts { state: 'green' | 'red' }
+export interface SceneOpts { state: 'green' | 'red'; /** Per-instance seed for random events. */ seed?: number; /** Live (shimmer) frames only: scenes may add rare events such as a jumping fish. */ jumps?: boolean }
 export type SceneFn = (ctx: CanvasRenderingContext2D, W: number, H: number, t: number, p: ArtColours, o: SceneOpts) => void;
 
 export const TAU = Math.PI * 2;
