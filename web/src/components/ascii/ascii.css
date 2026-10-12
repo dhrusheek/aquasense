@@ -1,0 +1,42 @@
+/* <Ascii>: characters as the graphic material (spec 05 §2.2). One text node per block; colour is a
+   single ink, brightness comes from character density. */
+.ascii {
+  display: inline-block;
+  width: max-content;
+  margin: 0;
+  font-family: var(--font-mono, 'Geist Mono Variable', ui-monospace, Menlo, Consolas, monospace);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: 0;
+  white-space: pre;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0, 'calt' 0;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Multi-row blocks sit on the top of their line, so no descender gap opens under them. */
+.ascii[data-rows] { vertical-align: top; }
+
+.ascii[data-size='xs'] { font-size: 10px; }
+.ascii[data-size='sm'] { font-size: 12px; }
+.ascii[data-size='md'] { font-size: 14px; }
+.ascii[data-size='lg'] { font-size: 16px; }
+
+.ascii[data-ink='accent'] { color: var(--water); }
+/* glow: the same ink, no halo (spec 07: nothing glows but h1 and panel titles) */
+.ascii[data-ink='glow'] { color: var(--water); }
+.ascii[data-ink='mono'] { color: var(--muted-foreground); }
+/* ramp / surface: one ink now; brightness comes from character density alone */
+.ascii[data-ink='ramp'],
+.ascii[data-ink='surface'] { color: var(--water); }
+
+/* Where gradients are dropped (forced colours, print), fall back to plain ink. */
+@media (forced-colors: active) {
+  .ascii[data-ink] { background-image: none; color: CanvasText; text-shadow: none; }
+}
+@media print {
+  .ascii[data-ink='ramp'],
+  .ascii[data-ink='surface'] { background-image: none; color: var(--water); }
+}

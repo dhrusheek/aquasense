@@ -1,0 +1,35 @@
+/* Pond life (spec 09): a fixed layer between the page ground and every pad. */
+[data-slot='pond'] {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+[data-slot='pond-water'] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+[data-slot='pond-fish'] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  padding: 0;
+  white-space: pre;
+  font: 14px/17px var(--font-mono);
+  color: var(--n3);
+  opacity: 0;
+  user-select: none;
+  will-change: transform;
+}
+
+/* The theme toggle's icon turns in over 180 ms when it swaps (a fresh svg mounts on each switch). */
+@keyframes aq-toggle-turn {
+  from { transform: rotate(-90deg); }
+  to { transform: none; }
+}
+[data-slot='theme-toggle'] svg { animation: aq-toggle-turn 180ms ease-out; }

@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Design Check · AquaSense-WSN</title>
+<meta name="description" content="Component check page: hero, card grid, form validation states, dialog and toast, built with the dashboard's own CSS.">
+<script>
+  /* Same asset resolution as index.html: Flask serves this page at /design-check and assets at /static/. */
+  window.ASSET_BASE = /\/static\/([^\/]*)?$/.test(location.pathname) ? '' : 'static/';
+  document.write('<link rel="stylesheet" href="' + window.ASSET_BASE + 'styles.css">');
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3c5 7 9 11.5 9 16a9 9 0 0 1-18 0c0-4.5 4-9 9-16z' fill='%230e9aa7'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<main id="main" class="page" tabindex="-1">
+  <header class="page-top">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c5 7 9 11.5 9 16a9 9 0 0 1-18 0c0-4.5 4-9 9-16z"/></svg>
+      <div>
+        <div class="brand-name">AquaSense-WSN</div>
+        <div class="brand-sub">Design check</div>
+      </div>
+    </div>
+    <nav class="btns" aria-label="Page links">
+      <a class="btn ghost" href="/">Back to dashboard</a>
+      <label class="switch-row" for="themeSw"><input class="switch" id="themeSw" type="checkbox" role="switch"><span class="label">Dark mode</span></label>
+    </nav>
+  </header>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="heroTitle">
+    <span class="eyebrow"><span class="pill on"><span class="dot"></span>Pond 2 · live</span></span>
+    <h1 id="heroTitle">Four sensors, one calm reading of the pond.</h1>
+    <p>AquaSense watches pond turbidity and the temperature inside two node enclosures (with an over-temperature alert on N1) from three ESP32 nodes, aggregates them at a cluster head, drives a two-LED status light at the sink and reports to this laptop over a self-built MAC and routing layer.</p>
+    <div class="btns">
+      <button class="btn primary lg" type="button" id="openDialogBtn">Start a demo run</button>
+      <a class="btn lg" href="/#r9">See the 17-step demo flow</a>
+    </div>
+  </section>
+
+  <!-- ============ CARD GRID ============ -->
+  <section class="section" aria-labelledby="cardsTitle">
+    <h2 id="cardsTitle">What the network is doing right now</h2>
+    <p class="sub">Three live summaries plus the loading and empty states every card must have.</p>
+    <div class="grid g3">
+      <article class="card">
+        <div class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3c4 5.5 7 9 7 12.5a7 7 0 0 1-14 0C5 12 8 8.5 12 3z"/></svg></div>
+        <div class="kpi"><span class="k">Packet delivery</span><span class="v">98.4<small>%</small></span><span class="s">1,236 of 1,256 frames acknowledged</span></div>
+        <p>Measured end to end from N1 and N2 through the cluster head to the sink.</p>
+      </article>
+      <article class="card">
+        <div class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h4l3-8 4 16 3-8h2"/></svg></div>
+        <div class="kpi"><span class="k">Average delay</span><span class="v">212<small>ms</small></span><span class="s">Two hops, one 500 ms TDMA slot each</span></div>
+        <p>Delay is sensor read to sink receipt, stamped with network time from the cluster head.</p>
+      </article>
+      <article class="card">
+        <div class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5m0 14h16M8 15l4-5 3 3 5-7"/></svg></div>
+        <div class="kpi"><span class="k">Data reduction</span><span class="v">66<small>%</small></span><span class="s">3 member frames → 1 aggregate</span></div>
+        <p>N3 fuses the three readings and forwards one frame to N4 per superframe.</p>
+      </article>
+      <article class="card skel" aria-busy="true" aria-label="Loading card">
+        <div class="tile-icon" aria-hidden="true"></div>
+        <div class="sk w60"></div><div class="sk w40"></div><div class="sk w80"></div>
+      </article>
+      <article class="card">
+        <div class="card-head"><h2>Route changes</h2><span class="chip">empty state</span></div>
+        <div class="empty">No route changes yet. Trigger a link failure from the Adaptive Routing view to see one here.</div>
+      </article>
+      <article class="card">
+        <div class="card-head"><h2>Node status</h2><span class="chip ok">all online</span></div>
+        <div class="states">
+          <span class="chip accent">N1 · enclosure temp</span>
+          <span class="chip info">N2 · turbidity</span>
+          <span class="chip warn">N3 · cluster head</span>
+          <span class="chip">N4 · sink</span>
+        </div>
+        <p>Chips use the semantic colours only: accent, info, warn, bad, ok. Node identity colours stay on charts and the topology map.</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ============ STATUS LIGHT ============ -->
+  <section class="section" aria-labelledby="lightTitle">
+    <h2 id="lightTitle">Pond status light</h2>
+    <p class="sub">The N4 light widget in every state, one dot per LED (red and green): hot blinks red, stale blinks green, test cycles red then green, off dims both.</p>
+    <div class="grid g3">
+      <article class="card"><div class="light"><div class="lamp is-green" role="img" aria-label="Status light green"><span class="lamp-dot red"></span><span class="lamp-dot green"></span></div><div class="light-text"><div class="light-state ok">Green</div><div class="light-reason">all nominal</div><div class="light-since mono">since 42 s</div></div></div></article>
+      <article class="card"><div class="light"><div class="lamp is-hot" role="img" aria-label="Status light hot, red blinking"><span class="lamp-dot red"></span><span class="lamp-dot green"></span></div><div class="light-text"><div class="light-state bad">Hot · red blinking</div><div class="light-reason">N1 enclosure hot</div><div class="light-since mono">since 6 s</div></div></div></article>
+      <article class="card"><div class="light"><div class="lamp is-red" role="img" aria-label="Status light red"><span class="lamp-dot red"></span><span class="lamp-dot green"></span></div><div class="light-text"><div class="light-state bad">Red</div><div class="light-reason">turbidity threshold (D)</div><div class="light-since mono">since 3 s</div></div></div></article>
+      <article class="card"><div class="light"><div class="lamp is-stale" role="img" aria-label="Status light stale, green blinking"><span class="lamp-dot red"></span><span class="lamp-dot green"></span></div><div class="light-text"><div class="light-state warn">Stale · green blinking</div><div class="light-reason">no data for 9 s</div><div class="light-since mono">since 9 s</div></div></div></article>
+      <article class="card"><div class="light"><div class="lamp is-test" role="img" aria-label="Status light test, cycling"><span class="lamp-dot red"></span><span class="lamp-dot green"></span></div><div class="light-text"><div class="light-state info">Test · cycling</div><div class="light-reason">LIGHT_TEST</div><div class="light-since mono">since 1 s</div></div></div></article>
+      <article class="card"><div class="light compact"><div class="lamp h is-off" role="img" aria-label="Status light off"><span class="lamp-dot red"></span><span class="lamp-dot green"></span></div><div class="light-text"><div class="light-state">Off</div><div class="light-reason">waiting for first data</div><div class="light-since mono">compact, horizontal</div></div></div></article>
+    </div>
+  </section>
+
+  <!-- ============ FORM ============ -->
+  <section class="section" aria-labelledby="formTitle">
+    <h2 id="formTitle">Register a node</h2>
+    <p class="sub">Every field shows its default, focus, valid, invalid and disabled state. Submit with empty fields to see validation.</p>
+    <form class="card" id="nodeForm" novalidate>
+      <div class="form-grid">
+        <div class="field" data-field="name">
+          <label for="fName">Node name</label>
+          <input class="input" id="fName" name="name" type="text" placeholder="e.g. N5 · dissolved oxygen" autocomplete="off" required minlength="2">
+          <span class="hint">Shown on the topology map and in the node table.</span>
+          <span class="err" role="alert">Enter at least two characters.</span>
+        </div>
+        <div class="field" data-field="mac">
+          <label for="fMac">ESP32 MAC address</label>
+          <input class="input mono" id="fMac" name="mac" type="text" placeholder="AA:BB:CC:DD:EE:05" autocomplete="off" required pattern="^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$" spellcheck="false">
+          <span class="hint">Six hex pairs separated by colons.</span>
+          <span class="err" role="alert">Use the form AA:BB:CC:DD:EE:05.</span>
+        </div>
+        <div class="field" data-field="gpio">
+          <label for="fGpio">Sensor GPIO</label>
+          <input class="input mono" id="fGpio" name="gpio" type="number" min="32" max="39" placeholder="34" required>
+          <span class="hint">ADC1 pins only (32–39) so Wi-Fi does not block reads.</span>
+          <span class="err" role="alert">Pick a pin between 32 and 39.</span>
+        </div>
+        <div class="field">
+          <label for="fRole">Role</label>
+          <input class="input" id="fRole" type="text" value="Member node (fixed)" disabled>
+          <span class="hint">Only N3 can be cluster head in this topology.</span>
+        </div>
+        <div class="field full valid">
+          <label for="fParent">Parent (prefilled, valid)</label>
+          <input class="input" id="fParent" type="text" value="N3 · cluster head" readonly>
+          <span class="hint">Pre-validated from the current route table.</span>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" type="reset" id="resetBtn">Clear</button>
+        <button class="btn primary" type="submit" id="submitBtn"><span class="spinner" aria-hidden="true"></span>Save node</button>
+      </div>
+      <div class="form-ok" id="formOk" role="status">Saved. The node will join at the next HELLO slot.</div>
+    </form>
+    <div class="grid g2 mt">
+      <div class="card tw-card">
+        <div class="card-head"><div><h2>N1 over-temperature alert threshold</h2><p class="sub">Inline field + action (views 1 and 6). Default state.</p></div></div>
+        <form class="tw-form" novalidate>
+          <dl class="kv"><dt>Current threshold</dt><dd>60.00 °C <span class="muted small">default</span></dd><dt>Live N1 reading</dt><dd>49.34 °C <span class="chip">normal</span></dd></dl>
+          <div class="field">
+            <label for="dcTw">Alert threshold (°C)</label>
+            <div class="tw-row"><input class="input mono" id="dcTw" type="number" inputmode="decimal" step="0.5" min="0" max="150" value="60"><button type="button" class="btn primary"><span class="spinner" aria-hidden="true"></span><span>Set threshold</span></button></div>
+            <span class="hint">Set it just below the live reading to make the pond light blink red (hot).</span>
+            <span class="err" role="alert"></span>
+          </div>
+        </form>
+      </div>
+      <div class="card tw-card">
+        <div class="card-head"><div><h2>N1 over-temperature alert threshold</h2><p class="sub">Invalid value, and a request in flight.</p></div></div>
+        <form class="tw-form" novalidate>
+          <dl class="kv"><dt>Current threshold</dt><dd>60.00 °C <span class="chip info">sent 48.50 °C · waiting for N1</span></dd><dt>Live N1 reading</dt><dd>49.34 °C <span class="chip">normal</span></dd></dl>
+          <div class="field invalid">
+            <label for="dcTwBad">Alert threshold (°C)</label>
+            <div class="tw-row"><input class="input mono" id="dcTwBad" type="number" inputmode="decimal" step="0.5" min="0" max="150" value="180" aria-invalid="true"><button type="button" class="btn primary loading" disabled aria-busy="true"><span class="spinner" aria-hidden="true"></span><span>Set threshold</span></button></div>
+            <span class="hint">Set it just below the live reading to make the pond light blink red (hot).</span>
+            <span class="err" role="alert">Use a value from 0 to 150 °C.</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUTTON STATES ============ -->
+  <section class="section" aria-labelledby="btnTitle">
+    <h2 id="btnTitle">Buttons and toasts</h2>
+    <p class="sub">Primary, default, ghost, danger and disabled, then the two toast tones.</p>
+    <div class="card">
+      <div class="states">
+        <button class="btn primary" type="button" data-toast="Command queued → sink will broadcast it in the next control slot">Primary</button>
+        <button class="btn" type="button" data-toast="Schedule update requested">Default</button>
+        <button class="btn ghost" type="button" data-toast="Nothing changed">Ghost</button>
+        <button class="btn danger" type="button" data-toast="Link N1→N3 marked down" data-toast-kind="err">Danger</button>
+        <button class="btn primary" type="button" disabled>Disabled</button>
+        <button class="btn primary loading" type="button" disabled><span class="spinner" aria-hidden="true"></span>Loading</button>
+        <button class="btn" type="button" data-toast="Exported 1,256 rows to CSV" data-toast-kind="ok">Show success toast</button>
+        <button class="btn secondary" type="button" data-toast="Secondary action">Secondary</button>
+        <button class="btn sm" type="button" data-toast="Small outline">Small</button>
+        <button class="btn icon" type="button" aria-label="Refresh" data-toast="Refreshed"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36M21 3v6h-6"/></svg></button>
+      </div>
+      <hr class="separator">
+      <div class="states">
+        <span class="chip">secondary</span>
+        <span class="chip outline">outline</span>
+        <span class="chip primary">primary</span>
+        <span class="chip bad">destructive</span>
+        <span class="badge hw">hardware</span>
+        <span class="badge sim">simulator</span>
+        <span class="badge mock">mock</span>
+        <span class="kbd">⌘</span><span class="kbd">K</span>
+      </div>
+      <hr class="separator">
+      <div class="alert" role="status">
+        <div class="alert-title">Schedule version 7 broadcast</div>
+        <div class="alert-desc">N3 reassigned slot 4 to N2 after N1 missed three HELLO beacons.</div>
+      </div>
+      <div class="alert destructive mt" role="alert">
+        <div class="alert-title">Link N1–N3 is down</div>
+        <div class="alert-desc">Three ACK timeouts in a row. Routing has switched N1 to 1&gt;2&gt;3&gt;4.</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ DIALOG ============ -->
+<dialog class="modal" id="demoDialog" aria-labelledby="dlgTitle" aria-describedby="dlgDesc">
+  <form method="dialog">
+    <button class="modal-close" type="submit" value="cancel" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <div class="modal-body">
+      <h2 id="dlgTitle">Start a demo run?</h2>
+      <p id="dlgDesc">This resets the metrics window, re-arms the 17-step demo detector and asks the sink to broadcast a fresh schedule. Nodes keep their routes.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" value="cancel" type="submit">Cancel</button>
+      <button class="btn primary" value="start" type="submit" id="dlgConfirm">Start run</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<noscript><div class="noscript">Interactive states on this page need JavaScript.</div></noscript>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---- theme toggle (manual override of prefers-color-scheme) ---- */
+  var root = document.documentElement;
+  function applyTheme(t) {
+    if (t === 'dark' || t === 'light') { root.setAttribute('data-theme', t); root.style.colorScheme = t; }
+    else { root.removeAttribute('data-theme'); root.style.colorScheme = ''; }
+    $('themeSw').checked = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+  var saved = null;
+  try { saved = localStorage.getItem('aq-theme'); } catch (e) {}
+  var q = /[?&]theme=(dark|light)/.exec(location.search);
+  applyTheme(q ? q[1] : saved);
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+    if (!root.getAttribute('data-theme')) applyTheme(null);
+  });
+  $('themeSw').addEventListener('change', function () {
+    var next = $('themeSw').checked ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem('aq-theme', next); } catch (e) {}
+  });
+
+  /* ---- toasts ---- */
+  function toast(msg, kind) {
+    var box = $('toasts');
+    var t = document.createElement('div');
+    t.className = 'toast' + (kind ? ' ' + kind : '');
+    t.textContent = msg;
+    box.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 3600);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('[data-toast]'), function (b) {
+    b.addEventListener('click', function () { toast(b.getAttribute('data-toast'), b.getAttribute('data-toast-kind') || ''); });
+  });
+
+  /* ---- dialog ---- */
+  var dlg = $('demoDialog');
+  $('openDialogBtn').addEventListener('click', function () { dlg.showModal(); });
+  dlg.addEventListener('close', function () {
+    if (dlg.returnValue === 'start') toast('Demo run started · metrics window reset', 'ok');
+  });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close('cancel'); });
+
+  /* ---- form validation ---- */
+  var form = $('nodeForm');
+  function setState(field, ok) {
+    var wrap = field.closest('.field');
+    if (!wrap) return;
+    wrap.classList.toggle('invalid', ok === false);
+    wrap.classList.toggle('valid', ok === true);
+    field.setAttribute('aria-invalid', ok === false ? 'true' : 'false');
+  }
+  function validate(field) {
+    if (field.disabled || field.readOnly) return true;
+    var ok = field.checkValidity();
+    /* minlength is only enforced by the browser on user-typed values, so check it ourselves too */
+    if (ok && field.minLength > 0 && field.value.length < field.minLength) ok = false;
+    setState(field, ok);
+    return ok;
+  }
+  Array.prototype.forEach.call(form.querySelectorAll('.input'), function (f) {
+    f.addEventListener('blur', function () { if (f.value !== '') validate(f); });
+    f.addEventListener('input', function () { if (f.closest('.field').classList.contains('invalid')) validate(f); });
+  });
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var all = true, first = null;
+    Array.prototype.forEach.call(form.querySelectorAll('.input'), function (f) {
+      var ok = validate(f);
+      if (!ok) { all = false; if (!first) first = f; }
+    });
+    if (!all) { first.focus(); toast('Fix the highlighted fields', 'err'); return; }
+    var btn = $('submitBtn');
+    btn.classList.add('loading'); btn.disabled = true; $('formOk').classList.remove('show');
+    setTimeout(function () {
+      btn.classList.remove('loading'); btn.disabled = false;
+      $('formOk').classList.add('show');
+      toast('Node saved', 'ok');
+    }, 900);
+  });
+  form.addEventListener('reset', function () {
+    Array.prototype.forEach.call(form.querySelectorAll('.field'), function (w) {
+      if (w.querySelector('[readonly]')) return;
+      w.classList.remove('invalid', 'valid');
+    });
+    $('formOk').classList.remove('show');
+  });
+
+  /* ---- ?state=invalid lets a screenshot capture the validation state without clicking ---- */
+  if (/[?&]state=invalid/.test(location.search)) {
+    $('fName').value = 'N';
+    $('fMac').value = 'AA:BB:CC';
+    $('fGpio').value = '12';
+    Array.prototype.forEach.call(form.querySelectorAll('.input'), validate);
+  }
+  if (/[?&]dialog=1/.test(location.search)) { dlg.showModal(); }
+  if (/[?&]toast=1/.test(location.search)) { toast('Exported 1,256 rows to CSV', 'ok'); toast('Link N1→N3 marked down', 'err'); }
+})();
+</script>
+</body>
+</html>

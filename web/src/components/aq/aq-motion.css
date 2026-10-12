@@ -1,0 +1,38 @@
+/* Hover and focus micro-motion for DataTable rows and the Tray header (spec 09 §7). */
+
+/* A bullet in the leading gutter of the first cell; it takes no layout space. */
+[data-slot='data-table'] tr[data-row] > td:first-child { position: relative; }
+[data-slot='data-table'] tr[data-row] > td:first-child::before {
+  content: '\2022';
+  position: absolute;
+  left: 0.3rem;
+  top: 50%;
+  translate: 0 -50%;
+  color: var(--muted-foreground);
+  line-height: 1;
+  opacity: 0;
+  scale: 0.4;
+  pointer-events: none;
+  transition: opacity 120ms ease, scale 120ms ease;
+}
+[data-slot='data-table'] tr[data-row]:hover > td:first-child::before,
+[data-slot='data-table'] tr[data-row]:focus-within > td:first-child::before {
+  opacity: 1;
+  scale: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot='data-table'] tr[data-row] > td:first-child::before { transition: none; }
+}
+
+/* Tray header wave: room is reserved only where hover exists, so there is no layout shift. */
+.tray-wave-slot { display: none; }
+@media (hover: hover) {
+  .tray-wave-slot { display: inline-flex; width: 8ch; font-size: 10px; align-items: center; }
+}
+.tray-wave-slot > [data-slot='ascii'] { animation: tray-wave-in 120ms ease both; }
+.tray-wave-slot[data-leaving] > [data-slot='ascii'] { animation: tray-wave-out 120ms ease both; }
+@keyframes tray-wave-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tray-wave-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .tray-wave-slot > [data-slot='ascii'] { animation: none; }
+}

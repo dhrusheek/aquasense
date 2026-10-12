@@ -1,0 +1,309 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+/* ASCII animation system (spec 05 §2). In the components layer so a utility on <Ascii> still wins. */
+@import "./components/ascii/ascii.css" layer(components);
+@import "./components/pond/pond.css" layer(components);
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: 'Geist Mono Variable', ui-monospace, Menlo, Consolas, monospace;
+
+  /* shadcn names → utilities (bg-background, text-muted-foreground, border-border …) */
+  --color-background: var(--background);         --color-foreground: var(--foreground);
+  --color-card: var(--card);                     --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);               --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);               --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);           --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);                   --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);                 --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);  --color-input: var(--input);  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1); --color-chart-2: var(--chart-2); --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4); --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);               --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary); --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent); --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border); --color-sidebar-ring: var(--sidebar-ring);
+
+  /* AquaSense names (semantic aliases of the same palette) */
+  --color-ground: var(--ground);
+  --color-ink-2: var(--ink-2);  --color-ink-3: var(--ink-3);  --color-ink-4: var(--ink-4);  --color-ink-5: var(--ink-5);
+  --color-paper: var(--card);  --color-tray: var(--card);  --color-ink: var(--foreground);
+  --color-graphite: var(--muted-foreground);  --color-hairline: var(--border);  --color-hover: var(--accent);
+  /* status hues: ok and bad are the two physical LEDs (spec 07 §1); warn and the -ink variants are ink */
+  --color-ok: var(--ok);     --color-ok-ink: var(--ok-ink);
+  --color-warn: var(--warn); --color-warn-ink: var(--warn-ink);
+  --color-bad: var(--bad);   --color-bad-ink: var(--bad-ink);
+  /* the accent ("water") and the four node stops of the depth ramp: text-water, bg-n1, fill-n2, stroke-n3 … */
+  --color-water: var(--water);  --color-water-ink: var(--water-ink);  --color-water-soft: var(--water-soft);
+  --color-n1: var(--n1);  --color-n2: var(--n2);  --color-n3: var(--n3);  --color-n4: var(--n4);
+  --color-n1-hi: var(--n1-hi);  --color-n2-hi: var(--n2-hi);  --color-n3-hi: var(--n3-hi);  --color-n4-hi: var(--n4-hi);
+  --color-n1-lo: var(--n1-lo);  --color-n2-lo: var(--n2-lo);  --color-n3-lo: var(--n3-lo);  --color-n4-lo: var(--n4-lo);
+  --color-deep: var(--deep);  --color-rim: var(--rim);  --color-rim-ink: var(--rim-ink);  --color-dawn: var(--dawn);
+
+  /* Spec 08 §3: cards 16, inner blocks 12, controls are pills (rounded-full) in the components. */
+  --radius-sm: 8px;   --radius-md: 10px;
+  --radius-lg: 12px;  --radius-xl: 16px;
+  --radius-2xl: 16px; --radius-3xl: 16px;  --radius-4xl: 16px;
+
+  --text-2xs: 0.75rem;  --text-2xs--line-height: 1rem;        /* 12 px: the smallest text anywhere */
+}
+
+/* Spec 08 §1: one ink on a white card over a soft ground. Light is the default theme.
+   Real colour survives only in the two status lamps (--ok, --bad) and failure marks (--bad). */
+:root {
+  color-scheme: light;
+  --radius: 16px;
+  --control-h: 40px;
+  --ground: #F3F3F1;
+  --card-fill: #FFFFFF;
+  --ink: #10152B;
+  --ink-2: #565C6E;
+  --ink-3: #E2E3E8;
+  --ink-4: #F0F1F4;
+  --ink-5: #F7F7F9;
+
+  --background: var(--ground);      --foreground: var(--ink);
+  --card: var(--card-fill);         --card-foreground: var(--ink);
+  --popover: var(--card-fill);      --popover-foreground: var(--ink);
+  --primary: var(--ink);            --primary-foreground: var(--card-fill);
+  --secondary: var(--card-fill);    --secondary-foreground: var(--ink);
+  --muted: var(--ink-4);            --muted-foreground: var(--ink-2);
+  --accent: var(--ink-4);           --accent-foreground: var(--ink);
+  --destructive: var(--bad);
+  --border: var(--ink-3);
+  --input: var(--ink-3);
+  --water: var(--ink);              --water-ink: var(--ink);
+  --water-soft: var(--ink-4);
+  --ring: var(--ink);
+  /* tone steps of the ink (100 / 70 / 45 / 25 % on the card), not hues; opaque so they overlap cleanly */
+  --n1: #10152B;  --n2: #585B6B;  --n3: #9396A0;  --n4: #C3C5CA;
+  --n1-hi: var(--n1);  --n1-lo: var(--n1);
+  --n2-hi: var(--n2);  --n2-lo: var(--n2);
+  --n3-hi: var(--n3);  --n3-lo: var(--n3);
+  --n4-hi: var(--n4);  --n4-lo: var(--n4);
+  /* no glows (spec 07 §1); names kept so callers compile */
+  --n1-glow: transparent;  --n2-glow: transparent;  --n3-glow: transparent;  --n4-glow: transparent;
+  --water-glow: transparent;  --ok-glow: transparent;  --warn-glow: transparent;  --bad-glow: transparent;
+  --text-glow: none;
+  --rim: transparent;
+  --rim-ink: var(--ink-3);
+  --deep: #10152B;
+  --dawn: #FFB070;
+  --sidebar: var(--card-fill);      --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--ink);    --sidebar-primary-foreground: var(--card-fill);
+  --sidebar-accent: var(--ink-4);   --sidebar-accent-foreground: var(--ink);
+  --sidebar-border: var(--ink-3);   --sidebar-ring: var(--ink);
+  --ok: #17803F;   --ok-ink: var(--ink);       /* --ok is the green LED lens only */
+  --warn: var(--ink); --warn-ink: var(--ink);  /* no amber anywhere */
+  --bad: #D7362B;  --bad-ink: #C0291F;         /* the red LED lens and failure marks */
+
+  /* Plain custom-property aliases for canvas code (viz/ reads these with getComputedStyle). */
+  --paper: var(--card-fill);
+  --tray: var(--card-fill);
+  --graphite: var(--ink-2);
+  --hairline: var(--ink-3);
+  --chart-1: var(--n1); --chart-2: var(--n2); --chart-3: var(--n3); --chart-4: var(--n4); --chart-5: var(--ink-2);
+
+  /* ---- Gradient tokens, now flat (spec 07 §1). Names kept; every one is a single colour. ---- */
+  --g-page: linear-gradient(var(--ground), var(--ground));
+  --g-tray: linear-gradient(var(--card-fill), var(--card-fill));
+  --g-card: linear-gradient(var(--card-fill), var(--card-fill));
+  --g-card-hover: linear-gradient(var(--ink-5), var(--ink-5));
+  --g-up: linear-gradient(var(--card-fill), var(--card-fill));
+  --g-input: linear-gradient(var(--card-fill), var(--card-fill));
+  --g-accent: linear-gradient(var(--ink), var(--ink));
+  --g-ink: linear-gradient(var(--ink), var(--ink));
+  --g-ink-hover: linear-gradient(color-mix(in srgb, var(--ink) 86%, var(--ground)), color-mix(in srgb, var(--ink) 86%, var(--ground)));
+  --g-text: linear-gradient(var(--ink), var(--ink));
+  --g-pool: linear-gradient(transparent, transparent);
+  --g-lens-off: linear-gradient(var(--card-fill), var(--card-fill));
+  --c-page: var(--ground);  --c-tray: var(--card-fill);  --c-card: var(--card-fill);  --c-up: var(--card-fill);  --c-input: var(--card-fill);
+  --c-ink: var(--ink);
+  --scrim: linear-gradient(color-mix(in srgb, var(--ground) 70%, transparent), color-mix(in srgb, var(--ground) 70%, transparent));
+
+  /* Home keeps its own scene (spec 07: Home is not changed), so these stay as they were. */
+  --g-sky: linear-gradient(180deg, #060D1F 0%, #0B2A5E 38%, #1868B8 72%, #3FA0E6 100%);
+  --g-water: linear-gradient(180deg, #1C6FB8 0%, #0E3F80 60%, #082650 100%);
+  --g-dawn: radial-gradient(60% 45% at 78% 58%, rgba(255, 176, 112, .70) 0%, rgba(255, 140, 80, .22) 45%, transparent 100%);
+  --g-vignette: linear-gradient(160deg, rgba(4, 10, 24, .80) 0%, rgba(4, 10, 24, .40) 40%, transparent 65%);
+
+  --g-n1: linear-gradient(var(--n1), var(--n1));
+  --g-n2: linear-gradient(var(--n2), var(--n2));
+  --g-n3: linear-gradient(var(--n3), var(--n3));
+  --g-n4: linear-gradient(var(--n4), var(--n4));
+  --g-depth: linear-gradient(var(--ink), var(--ink));
+  --g-surface: linear-gradient(var(--ink), var(--ink));
+  --grad-depth: var(--g-depth);
+  --grad-surface: var(--g-surface);
+  --g-row: linear-gradient(var(--ink-5), var(--ink-5));
+  --g-status-ok: linear-gradient(var(--ink), var(--ink));
+  --g-status-warn: linear-gradient(var(--ink), var(--ink));
+  --g-status-bad: linear-gradient(var(--bad), var(--bad));
+  --g-lens-ok: linear-gradient(var(--ok), var(--ok));
+  --g-lens-warn: linear-gradient(var(--ink), var(--ink));
+  --g-lens-bad: linear-gradient(var(--bad), var(--bad));
+  --g-lens-water: linear-gradient(var(--ink), var(--ink));
+  --g-lens-n1: linear-gradient(var(--n1), var(--n1));
+  --g-lens-n2: linear-gradient(var(--n2), var(--n2));
+  --g-lens-n3: linear-gradient(var(--n3), var(--n3));
+  --g-lens-n4: linear-gradient(var(--n4), var(--n4));
+  --tex-dots: radial-gradient(circle, var(--ink-3) 0.8px, transparent 1px);
+  --tex-grid: repeating-linear-gradient(90deg, var(--ink-3) 0 1px, transparent 1px 7px), repeating-linear-gradient(0deg, var(--ink-3) 0 1px, transparent 1px 13px);
+}
+
+.dark {
+  color-scheme: dark;
+  --ground: #0B0D12;
+  --card-fill: #12151C;
+  --ink: #EEF1FA;
+  --ink-2: #A9B0C2;
+  --ink-3: #262B37;
+  --ink-4: #1B1F29;
+  --ink-5: #151820;
+  --n1: #EEF1FA;  --n2: #ACAFB7;  --n3: #757880;  --n4: #494C54;
+  --bad: #EF5A4E;  --bad-ink: #FF8479;
+  --ok: #2FBF72;
+  --deep: #0B0D12;
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  /* The root stays at the browser's 16 px so every rem-based size in the spec holds (h-9 = 36 px,
+     text-2xs = 11 px, 17rem sidebar = 272 px). Body copy is 14 px / 1.5 everywhere. */
+  html { @apply font-sans antialiased; }
+  body {
+    @apply text-foreground; font-size: 14px; line-height: 1.5; min-height: 100svh;
+    background-color: var(--ground);
+  }
+  h1, h2, h3 { letter-spacing: -0.01em; text-wrap: balance; }
+  input::placeholder, textarea::placeholder { font-family: var(--font-mono); font-size: 13px; }
+  .mono, .font-mono, [data-mono] { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  /* focus ring everywhere: 2 px ink outline, 2 px offset (spec 08 §3) */
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: none; }
+  /* The router moves focus to the page title on navigation; a heading is not a control, so no ring. */
+  #view-title:focus-visible { outline: none; box-shadow: none; }
+  ::selection { background: var(--ink); color: var(--card-fill); }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+  }
+}
+
+/* Spec 08 §2: sentence case everywhere. `tray-title` is the card title (sans 15/600); `label-caps` keeps its
+   name but is a plain sans 13 ink-2 label (tile and key labels). `field-label` is the small mono label
+   above an input. */
+@utility tray-title { @apply font-sans text-[15px] leading-6 font-semibold text-foreground; letter-spacing: -0.005em; }
+@utility label-caps { @apply font-sans text-[13px] leading-5 font-normal text-ink-2; }
+@utility field-label { @apply font-mono text-xs leading-4 font-medium text-foreground; }
+/* Small mono "meta" text (counts, ids beside titles): 12 px minimum, ink-2. */
+@utility meta-text { @apply font-mono text-xs leading-4 text-ink-2; }
+@utility tabular { font-variant-numeric: tabular-nums; }
+
+
+/* =====================================================================================================
+   Surfaces and fills (spec 08 §1/§3). Names kept from spec 06; panels are white cards with a 1 px ink-3
+   border and a 16 px radius, no shadow. Inputs are pills.
+   ===================================================================================================== */
+
+@utility surface-page { background-color: var(--ground); background-image: none; }
+@utility surface-tray { background-color: var(--card-fill); background-image: none; border: 1px solid var(--ink-3); border-radius: 16px; }
+@utility surface-card { background-color: var(--card-fill); background-image: none; border: 1px solid var(--ink-3); border-radius: 16px; }
+/* Floating surfaces (dialog, sheet, tooltip, popover): the only place a soft shadow is allowed. Radius is set by the component. */
+@utility surface-up { background-color: var(--card-fill); background-image: none; border: 1px solid var(--ink-3); box-shadow: 0 8px 30px rgb(0 0 0 / 0.08); }
+@utility surface-input { background-color: var(--card-fill); background-image: none; border: 1px solid var(--ink-3); }
+@utility surface-card-hover { background-image: none; background-color: var(--ink-4); }
+
+/* Withdrawn (spec 08 §1): the corner dots are a no-op now. Name kept so call sites compile. */
+@utility panel-dots { position: relative; }
+/* An empty panel: a plain ink-4 block, no dashes, no art. */
+@utility panel-empty { background-color: var(--ink-5); border: 1px solid transparent; border-radius: 12px; }
+
+@utility fill-ink-g { background-color: var(--ink); background-image: none; color: var(--card-fill); }
+@utility fill-accent-g { background-color: var(--ink); background-image: none; color: var(--card-fill); }
+
+@utility node-g-1 { background-color: var(--n1); background-image: none; }
+@utility node-g-2 { background-color: var(--n2); background-image: none; }
+@utility node-g-3 { background-color: var(--n3); background-image: none; }
+@utility node-g-4 { background-color: var(--n4); background-image: none; }
+
+/* glow-*: none in the single-ink pass. */
+@utility glow-n1 { box-shadow: none; }
+@utility glow-n2 { box-shadow: none; }
+@utility glow-n3 { box-shadow: none; }
+@utility glow-n4 { box-shadow: none; }
+@utility glow-water { box-shadow: none; }
+@utility glow-ok { box-shadow: none; }
+@utility glow-warn { box-shadow: none; }
+@utility glow-bad { box-shadow: none; }
+
+/* A flat lamp: `lens` alone is the shape; add one `lens-*` tone. Only lens-ok and lens-bad are coloured
+   (the two physical LEDs); the rest are ink steps. lens-off is an outline. */
+@utility lens {
+  border-radius: 9999px;
+  @media (forced-colors: active) { border: 1px solid CanvasText; }
+}
+@utility lens-ok { border-radius: 9999px; background-color: var(--ok); background-image: none; box-shadow: none; }
+@utility lens-warn { border-radius: 9999px; background-color: var(--ink); background-image: none; box-shadow: none; }
+@utility lens-bad { border-radius: 9999px; background-color: var(--bad); background-image: none; box-shadow: none; }
+@utility lens-water { border-radius: 9999px; background-color: var(--ink); background-image: none; box-shadow: none; }
+@utility lens-n1 { border-radius: 9999px; background-color: var(--n1); background-image: none; box-shadow: none; }
+@utility lens-n2 { border-radius: 9999px; background-color: var(--n2); background-image: none; box-shadow: none; }
+@utility lens-n3 { border-radius: 9999px; background-color: var(--n3); background-image: none; box-shadow: none; }
+@utility lens-n4 { border-radius: 9999px; background-color: var(--n4); background-image: none; box-shadow: none; }
+@utility lens-off { border-radius: 9999px; background-color: transparent; background-image: none; border: 1px solid var(--ink-3); box-shadow: none; }
+
+/* Status chip: 1 px outline in the tone colour; the tone sets --chip-c, e.g. [--chip-c:var(--ink-3)]. */
+@utility chip-g { background-image: none; border-color: var(--chip-c, var(--ink-3)); }
+
+/* Display ink: plain ink text now. */
+@utility text-grad { background-image: none; color: var(--ink); }
+
+/* Halftone dots / character grain behind the content of the element (never over text). */
+@utility tex-dots {
+  position: relative; isolation: isolate;
+  &::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+    background-image: var(--tex-dots); background-size: 6px 6px; opacity: var(--tex-alpha, .5);
+  }
+}
+@utility tex-grid {
+  position: relative; isolation: isolate;
+  &::after {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+    background-image: var(--tex-grid); background-size: 7px 13px; opacity: var(--tex-alpha, .5);
+  }
+}
+
+@utility ring-glow { outline: 2px solid var(--ink); outline-offset: 2px; box-shadow: none; }
+@utility rule-depth { background-image: none; background-color: var(--ink-3); height: 1px; }
+
+/* A fresh row: a 600 ms wash that fades out (C applies the class). */
+@keyframes aq-wash { from { background-image: var(--g-row); } to { background-image: none; } }
+@utility aq-wash { animation: aq-wash 600ms ease-out 1; }
+/* A downed link breathes (B applies it in viz.css). */
+@keyframes aq-link-down { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+/* Skeleton: a slow opacity breath on the ink-5 fill. */
+@keyframes aq-skel { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+
+/* Dialog, sheet and drawer scrim: ground at 70 %. */
+@utility scrim { background-image: var(--scrim); }
+
+/* Sonner: card, 1 px ink-3 border, 14 px radius, soft shadow (the only place one is allowed). */
+[data-sonner-toast][data-styled='true'] { background: var(--card-fill); color: var(--ink); border: 1px solid var(--ink-3); border-radius: 14px; box-shadow: 0 8px 30px rgb(0 0 0 / 0.08); }
+[data-sonner-toast][data-styled='true'][data-type='error'] { border-color: var(--bad); }
+
+/* Meter (aq/Meter.tsx): a 6 px rounded progress bar on an ink-4 track, ink fill. */
+@utility meter-track { height: 6px; border-radius: 9999px; background-color: var(--ink-4); overflow: hidden; }
+@utility meter-fill { height: 100%; border-radius: 9999px; background-color: var(--ink); transition: width 300ms ease-out; }
+
+/* Forced colours: drop every gradient and let the system palette draw plain ink. */
+@media (forced-colors: active) {
+  * { background-image: none !important; }
+}

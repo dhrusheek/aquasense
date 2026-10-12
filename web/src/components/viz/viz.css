@@ -1,0 +1,44 @@
+/* Plain CSS of the viz layer: the lamp keyframes of the pond status light and the link-down pulse on
+   the map. Single ink (spec 08): no gradient stops, no halos, no patterns; the two lamp lenses are the only colour.
+
+   A lamp is "lit" by its classes; the animations switch it off for part of the cycle. Under
+   prefers-reduced-motion the animation is removed and the lit state stays: a hot light shows red
+   lit, a stale light green lit (the label still says "blinking"), a test shows both lit. */
+
+/* Stop colours kept for any caller that still draws a gradient: flat tone steps of the one ink. */
+.aq-stop-n1, .aq-stop-n1-hi, .aq-stop-n1-lo { stop-color: var(--n1); }
+.aq-stop-n2, .aq-stop-n2-hi, .aq-stop-n2-lo { stop-color: var(--n2); }
+.aq-stop-n3, .aq-stop-n3-hi, .aq-stop-n3-lo { stop-color: var(--n3); }
+.aq-stop-n4, .aq-stop-n4-hi, .aq-stop-n4-lo { stop-color: var(--n4); }
+.aq-stop-water, .aq-stop-water-hi, .aq-stop-water-lo, .aq-stop-ink-hi { stop-color: var(--ink); }
+.aq-stop-ink-lo { stop-color: var(--ink-2); }
+
+/* ---------- pond status light ---------- */
+
+/* A lamp sets --lamp (its lit colour). Unlit = an ink-4 lens with a 1 px ink-3 rim; lit = a solid lens.
+   The blink swaps lit for unlit; the lit state is the resting one, so reduced motion simply removes the animation. */
+.aq-lamp { border-radius: 9999px; border: 1px solid var(--ink-3); background: var(--ink-4); color: var(--ink-2); }
+.aq-lamp[data-lit] { border-color: var(--lamp); background: var(--lamp); color: var(--card); }
+@keyframes aq-lamp-blink {
+  0% { border-color: var(--lamp); background: var(--lamp); color: var(--card); }
+  50%, 100% { border-color: var(--ink-3); background: var(--ink-4); color: var(--ink-2); }
+}
+
+/* hot (red) and stale (green): lit / off every 500 ms */
+.aq-lamp-blink { animation: aq-lamp-blink 1s steps(1, end) infinite; }
+
+/* test: red, then green, 1 s each. The negative delay puts the green lamp in the second half of the 2 s cycle. */
+.aq-lamp-cycle { animation: aq-lamp-blink 2s steps(1, end) infinite; }
+.aq-lamp-cycle[data-lamp="green"] { animation-delay: -1s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .aq-lamp-blink, .aq-lamp-cycle { animation: none !important; }
+}
+
+/* ---------- topology ---------- */
+
+/* Packets are not rendered under reduced motion (Topology checks the media query); this keeps a
+   packet that is already on screen from moving if the setting flips before the next render. */
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="topology"] [data-packet] { display: none; }
+}

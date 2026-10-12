@@ -1,0 +1,10 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+server/data/
+web/dist*/
+web/.wrangler/
+logs/
+.DS_Store
+.playwright-mcp/

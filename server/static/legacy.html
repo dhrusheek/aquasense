@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>AquaSense-WSN Dashboard</title>
+<script>
+  /* Assets live in server/static/. Flask serves them at /static/… while the page itself is at "/";
+     a plain static server (python -m http.server from server/) serves the page at /static/index.html. */
+  try { var t = localStorage.getItem('aq-theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+  window.ASSET_BASE = /\/static\/([^\/]*)?$/.test(location.pathname) ? '' : 'static/';
+  document.write('<link rel="stylesheet" href="' + window.ASSET_BASE + 'styles.css">');
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3c5 7 9 11.5 9 16a9 9 0 0 1-18 0c0-4.5 4-9 9-16z' fill='%230e9aa7'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar" aria-label="Dashboard views">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c5 7 9 11.5 9 16a9 9 0 0 1-18 0c0-4.5 4-9 9-16z"/></svg>
+      <div>
+        <div class="brand-name">AquaSense-WSN</div>
+        <div class="brand-sub">23CSE341 · Lab Eval 2</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav" role="tablist" aria-orientation="vertical">
+      <a role="tab" href="#overview" data-view="overview"><span class="nav-num"><svg viewBox="0 0 24 24" aria-hidden="true" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg></span><span class="nav-label">Overview</span><span class="nav-marks">live</span></a>
+      <div class="nav-group">Rubric views</div>
+      <a role="tab" href="#r1" data-view="r1"><span class="nav-num">1</span><span class="nav-label">Architecture &amp; ESP32 Setup</span><span class="nav-marks">2 marks</span></a>
+      <a role="tab" href="#r2" data-view="r2"><span class="nav-num">2</span><span class="nav-label">BLE Localization</span><span class="nav-marks">3 marks</span></a>
+      <a role="tab" href="#r3" data-view="r3"><span class="nav-num">3</span><span class="nav-label">Wi-Fi MAC Protocol</span><span class="nav-marks">3 marks</span></a>
+      <a role="tab" href="#r4" data-view="r4"><span class="nav-num">4</span><span class="nav-label">Dynamic Schedule</span><span class="nav-marks">2 marks</span></a>
+      <a role="tab" href="#r5" data-view="r5"><span class="nav-num">5</span><span class="nav-label">Broadcast &amp; Unicast</span><span class="nav-marks">1 mark</span></a>
+      <a role="tab" href="#r6" data-view="r6"><span class="nav-num">6</span><span class="nav-label">Data Aggregation</span><span class="nav-marks">2 marks</span></a>
+      <a role="tab" href="#r7" data-view="r7"><span class="nav-num">7</span><span class="nav-label">Adaptive Routing</span><span class="nav-marks">2 marks</span></a>
+      <a role="tab" href="#r8" data-view="r8"><span class="nav-num">8</span><span class="nav-label">Performance Analysis</span><span class="nav-marks">2 marks</span></a>
+      <a role="tab" href="#r9" data-view="r9"><span class="nav-num">9</span><span class="nav-label">Demonstration &amp; Viva</span><span class="nav-marks">3 marks</span></a>
+    </nav>
+    <div class="sidebar-foot">
+      <div>20 marks across 9 rubrics</div><div>4 × ESP32 · BLE + ESP-NOW</div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main-col">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="tb-title">
+        <span class="tb-name">AquaSense-WSN</span>
+        <span class="tb-sub">Fish-pond water-quality network</span>
+      </div>
+      <span class="badge" id="srcBadge" title="Where the data comes from">—</span>
+      <span class="pill" id="onlinePill" role="status" aria-live="polite"><span class="dot"></span><span id="onlineText">Connecting…</span></span>
+      <div class="tb-stats">
+        <div class="tb-stat"><span class="tb-k">Superframe</span><span class="tb-v mono" id="tbSf">—</span></div>
+        <div class="tb-stat"><span class="tb-k">Network time</span><span class="tb-v mono" id="tbNet">—</span></div>
+      </div>
+      <div class="slotstrip mini" id="tbSlots" aria-label="Current TDMA slot"></div>
+      <div class="tb-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">
+          <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+          <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <!-- Overview -->
+      <section class="view" id="view-overview" data-view="overview" aria-labelledby="h-overview"></section>
+      <section class="view" id="view-r1" data-view="r1"></section>
+      <section class="view" id="view-r2" data-view="r2"></section>
+      <section class="view" id="view-r3" data-view="r3"></section>
+      <section class="view" id="view-r4" data-view="r4"></section>
+      <section class="view" id="view-r5" data-view="r5"></section>
+      <section class="view" id="view-r6" data-view="r6"></section>
+      <section class="view" id="view-r7" data-view="r7"></section>
+      <section class="view" id="view-r8" data-view="r8"></section>
+      <section class="view" id="view-r9" data-view="r9"></section>
+    </main>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+
+<noscript><div class="noscript">This dashboard needs JavaScript enabled.</div></noscript>
+<script>
+  document.write('<script src="' + window.ASSET_BASE + 'vendor/chart.umd.min.js"><\/script>');
+  document.write('<script src="' + window.ASSET_BASE + 'app.js"><\/script>');
+</script>
+</body>
+</html>
